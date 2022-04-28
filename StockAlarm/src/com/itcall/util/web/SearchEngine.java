@@ -61,8 +61,7 @@ public class SearchEngine implements Runnable {
 			String searchedValue = searchToUrl(this, resultSb);
 			params.put(thisIsNotParamKey, this.paramsData);
 			if (listener != null) {
-				boolean isNext = listener.workStepComplete(this.targetUrl, method, params, startStr, endStr, searchedValue,
-						resultSb);
+				boolean isNext = listener.workStepComplete(this.targetUrl, method, params, startStr, endStr, searchedValue, resultSb);
 				if (isNext == false) {
 					this.scheduledFuture.cancel(false);
 				}

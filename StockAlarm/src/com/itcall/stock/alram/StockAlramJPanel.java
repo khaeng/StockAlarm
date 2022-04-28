@@ -32,6 +32,8 @@ import com.itcall.util.web.SearchEngineListener;
 
 public class StockAlramJPanel extends JPanel {
 
+	/** 조회 시 아무런 결과가 안나올때가 있다. 이때 초기화를 바로 시키지 말고 3번이상 연속으로(!!!) 동일 상태가 나오면 재시도 하도록 한다. **/
+	private static final int MAX_FAIL_COUNT = 3;
 	private final int J_X_TERM = 5;
 	private final int J_Y_TERM = 7;
 	private final int J_HEIGHT = 25;
@@ -40,7 +42,7 @@ public class StockAlramJPanel extends JPanel {
 	private long chkCount = 0;
 	private int jPaneId;
 	private Properties properties;
-	
+
 	private JLabel status;
 	private JTextField jTxtUrl;
 	private JTextField jTxtParams;
@@ -57,26 +59,26 @@ public class StockAlramJPanel extends JPanel {
 	private JTextArea jTxea;
 	private String targetUrl;
 	private String responseBody;
-	
+
 	private SearchEngineListener listener = new SearchEngineListener() {
 		public int beforeCount = 0;
 		public String toDay = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 		@Override
 		public boolean workStepComplete(String targetUrl, String method, Map<String, Object> params, String startStr, String endStr, String searchedResult, StringBuffer body) {
-			
+
 			int resultCount = Integer.valueOf(searchedResult);
-			
+
 			StringBuffer log = new StringBuffer(String.format("> 감시[%d] Try[%d] : ", jPaneId, ++chkCount));
 			log.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
 					.append(" : [" + params.get("keyword") + "] " + searchedResult)
 					.append(" ====> " + resultCount);
-			
+
 			for (int i = 0; i < 100; i++) {
 				System.out.printf("\b"); // System.out.print("\b");
 			}
 			System.out.print(log.toString());
 			System.out.println("          ");
-			
+
 			if(resultCount > beforeCount) {
 				// 실행 IE to Page...
 				try {
@@ -116,7 +118,7 @@ public class StockAlramJPanel extends JPanel {
 			return true;
 		}
 	};
-	
+
 	public StockAlramJPanel(int jPaneId) throws FileNotFoundException, IOException {
 		this.jPaneId = jPaneId;
 		// this.iGap = (jPaneId - iGap) * 5;
@@ -132,58 +134,58 @@ public class StockAlramJPanel extends JPanel {
 //		setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		status.setBounds(J_X_TERM, J_Y_TERM, 70, J_HEIGHT);
 		add(status);
-		
+
 		jTxtUrl = new JTextField(properties.getProperty("jTxtUrl", ComUtil.DEF_DART_SEARCH_URL)); // "http://dart.fss.or.kr/dsab007/search.ax"));
 		jTxtUrl.setToolTipText("검색URL주소");
 		// jTxtUrl.setSize(150, J_HEIGHT);
 		jTxtUrl.setBounds(status.getX()+status.getWidth()+J_X_TERM, J_Y_TERM, 250, J_HEIGHT);
 		add(jTxtUrl);
-		
+
 		jTxtParams = new JTextField(properties.getProperty("jTxtParams", "startDate=${yyyyMMdd}&endDate=${yyyyMMdd}"));
 		jTxtParams.setToolTipText("기본적인 파라메터");
 		// jTxtParams.setSize(120, J_HEIGHT);
 		jTxtParams.setBounds(jTxtUrl.getX()+jTxtUrl.getWidth()+J_X_TERM, J_Y_TERM, 220, J_HEIGHT);
 		add(jTxtParams);
-		
+
 		jTxtKeyword = new JTextField(properties.getProperty("jTxtKeyword", "무상증자"));
 		jTxtKeyword.setToolTipText("검색할 한개의 단어를 입력하세요.");
 		// jTxtKeyword.setSize(100, J_HEIGHT);
 		jTxtKeyword.setBounds(jTxtParams.getX()+jTxtParams.getWidth()+J_X_TERM, J_Y_TERM, 100, J_HEIGHT);
 		add(jTxtKeyword);
-		
+
 		jTxtDocNm = new JTextField(properties.getProperty("jTxtDocNm", ""));
 		jTxtDocNm.setToolTipText("보고서명칭을 입력하세요. 예) 주요사항보고서(무상증자결정)");
 		// jTxtDocNm.setSize(100, J_HEIGHT);
 		jTxtDocNm.setBounds(jTxtKeyword.getX()+jTxtKeyword.getWidth()+J_X_TERM, J_Y_TERM, 100, J_HEIGHT);
 		add(jTxtDocNm);
-		
+
 		jTxtCorpNm = new JTextField(properties.getProperty("jTxtCorpNm", ""));
 		jTxtCorpNm.setToolTipText("회사명칭 또는 주식코드을 입력하세요. 예) 한국항우주 또는 047810");
 		// jTxtCorpNm.setSize(100, J_HEIGHT);
 		jTxtCorpNm.setBounds(jTxtDocNm.getX()+jTxtDocNm.getWidth()+J_X_TERM, J_Y_TERM, 100, J_HEIGHT);
 		add(jTxtCorpNm);
-		
+
 		jComboType = new JComboBox<String>(choices); // jComboType.setVisible(true);
 		jComboType.setSelectedIndex(Integer.valueOf(properties.getProperty("jComboType", "0")));
 		jComboType.setBounds(jTxtCorpNm.getX()+jTxtCorpNm.getWidth()+J_X_TERM, J_Y_TERM, 100, J_HEIGHT);
 		add(jComboType);
-		
+
 		jComboDelayMinites = new JComboBox<Integer>(new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 		jComboDelayMinites.setSelectedIndex(Integer.valueOf(properties.getProperty("jComboDelayMinites", "0")));
 		jComboDelayMinites.setBounds(jComboType.getX()+jComboType.getWidth()+J_X_TERM, J_Y_TERM, 50, J_HEIGHT);
 		add(jComboDelayMinites);
-		
+
 		jBtnLaucher = new JButton("감시");
 		jBtnLaucher.setToolTipText("감시를 시작하거나 멈춥니다.");
 		jBtnLaucher.setBounds(jComboDelayMinites.getX()+jComboDelayMinites.getWidth()+J_X_TERM, J_Y_TERM, 85, J_HEIGHT);
 		add(jBtnLaucher);
-		
+
 		jBtnGoUrl = new JButton("결과보기");
 		jBtnGoUrl.setToolTipText("결과가 검색되면 활성화 됩니다.");
 		jBtnGoUrl.setBounds(jBtnLaucher.getX()+jBtnLaucher.getWidth()+J_X_TERM, J_Y_TERM, 95, J_HEIGHT);
 		jBtnGoUrl.setEnabled(false);
 		add(jBtnGoUrl);
-		
+
 		jTxea = new JTextArea("검색결과 표시영역");
 		jTxea.setEditable(false);
 		// jTxea.setRows(5);
@@ -195,7 +197,7 @@ public class StockAlramJPanel extends JPanel {
 		add(scrollPaneClientRev);
 		// scrollPaneClientRev.setViewportView(jTxea);
 		scrollPaneClientRev.setVisible(true);
-		
+
 		jBtnLaucher.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -222,9 +224,9 @@ public class StockAlramJPanel extends JPanel {
 						if(choicesType[jComboType.getSelectedIndex()].equalsIgnoreCase("ALL") == false) {
 							params.put("dspType", choicesType[jComboType.getSelectedIndex()]);
 						}
-						
+
 						final StringBuffer result = new StringBuffer();
-						
+
 						if(jTxtUrl.getText().trim().equals(StockNewsSearchType.DART_SEARCH)) {
 							// currentPage=1&maxResults=15&maxLinks=10&sort=DATE&sortType=desc&textCrpCik=&lateKeyword=&flrCik=&dspTypeTab=&isSort=false&isTab=false&tocSrch=&b_textCrpCik=&b_flrCik=&b_keyword=%EB%AC%B4%EC%83%81%EC%A6%9D%EC%9E%90&b_docType=&b_textPresenterNm=&b_reportName=&b_startDate=20220104&b_endDate=20220104&b_dspType=B&b_synonym=&b_reSearch=&reportNamePopYn=Y&autoSearch=N&option=contents&keyword=%EB%AC%B4%EC%83%81%EC%A6%9D%EC%9E%90&textCrpNm=&textPresenterNm=&startDate=20220104&endDate=20220104&docType=&reportName=&dspType=B
 //							params.put("currentPage", "1");
@@ -271,7 +273,7 @@ public class StockAlramJPanel extends JPanel {
 							if(jTxtKeyword.getText().isEmpty() == false) {
 								params.put("sc_word", jTxtKeyword.getText()); // sc_word=세계 최초, params.put("sc_sdate", "${yyyyMMdd}"); params.put("sc_edate", "${yyyyMMdd}");
 							}
-							SearchEngine.searchToUrl(jTxtUrl.getText(), "GET", params 
+							SearchEngine.searchToUrl(jTxtUrl.getText(), "GET", params
 									, StockNewsSearchType.SEARCH_START_KEY_MAP.get(StockNewsSearchType.INFOSTOCK_SEARCH)
 									, StockNewsSearchType.SEARCH_END_KEY_MAP.get(StockNewsSearchType.INFOSTOCK_SEARCH)
 									, (jComboDelayMinites.getSelectedIndex() + 1) * 60
@@ -281,7 +283,7 @@ public class StockAlramJPanel extends JPanel {
 								, " : ", "\n", (jComboDelayMinites.getSelectedIndex() + 1) * 60, result
 								, listener);
 						}
-						
+
 						jBtn.setText("감시중");
 						String message = String.format("\nID[%d] 감시 중... : ", jPaneId);
 						System.out.println(message);
@@ -302,7 +304,7 @@ public class StockAlramJPanel extends JPanel {
 				scrollPaneClientRev.getVerticalScrollBar().setValue(0); // 가장 앞으로 이동.
 			}
 		});
-		
+
 		jBtnGoUrl.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -315,9 +317,9 @@ public class StockAlramJPanel extends JPanel {
 				}
 			}
 		});
-		
+
 	}
-	
+
 	public Properties loadConfFile(String fileName) throws FileNotFoundException, IOException {
 		// load to saved data...
 		Properties properties = new Properties();
@@ -326,7 +328,7 @@ public class StockAlramJPanel extends JPanel {
 		}
 		return properties;
 	}
-	
+
 	protected void saveProperties(String fileName) throws FileNotFoundException, IOException {
 		// save to properties file
 		properties.setProperty("jTxtUrl", jTxtUrl.getText());
@@ -336,7 +338,7 @@ public class StockAlramJPanel extends JPanel {
 		properties.setProperty("jTxtCorpNm", jTxtCorpNm.getText());
 		properties.setProperty("jComboType", jComboType.getSelectedIndex()+"");
 		properties.setProperty("jComboDelayMinites", jComboDelayMinites.getSelectedIndex()+"");
-		
+
 		properties.store(new FileOutputStream(fileName), null);
 	}
 
@@ -349,23 +351,29 @@ public class StockAlramJPanel extends JPanel {
 
 	private SearchEngineListener DART_LISTENER = new SearchEngineListener() {
 		public int beforeCount = 0;
+		public int failCount = 0;
 		public String toDay = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 		@Override
 		public boolean workStepComplete(String targetUrl, String method, Map<String, Object> params, String startStr, String endStr, String searchedResult, StringBuffer body) {
-			
+
 			int resultCount = Integer.valueOf(searchedResult);
-			
+
 			StringBuffer log = new StringBuffer(String.format("> 감시[%d] Try[%d] : ", jPaneId, ++chkCount));
 			log.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
 					.append(" : [" + params.get("keyword") + "] " + searchedResult)
 					.append(" ====> " + resultCount);
-			
+
 			for (int i = 0; i < 100; i++) {
 				System.out.printf("\b"); // System.out.print("\b");
 			}
 			System.out.print(log.toString());
-			System.out.println("          ");
-			
+			if(resultCount==0 && beforeCount > 0) {
+				System.out.print(" | Fail[" + ++failCount + "]          ");
+			} else {
+				System.out.print("          ");
+				failCount=0;
+			}
+
 			if(resultCount > beforeCount) {
 				// 실행 IE to Page...
 				try {
@@ -381,10 +389,11 @@ public class StockAlramJPanel extends JPanel {
 				} catch (URISyntaxException | IOException e) {
 					e.printStackTrace();
 				}
-			} else if(toDay.equals(new SimpleDateFormat("yyyy-MM-dd").format(new Date())) == false || resultCount < beforeCount){
+			} else if(toDay.equals(new SimpleDateFormat("yyyy-MM-dd").format(new Date())) == false ||  failCount > MAX_FAIL_COUNT){
 				toDay = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 				beforeCount = resultCount; // 날짜선이 변경되어 초기화 된 경우...
 				chkCount = 0; // 체크카운트를 되돌린다.
+				failCount=0; // 연속 실패 카운트도 초기화 한다.
 			}
 			if(jTxea.getText().length() < TXT_AREA_BUF_SIZE) {
 				log.append("\n").append(jTxea.getText());
@@ -411,7 +420,7 @@ public class StockAlramJPanel extends JPanel {
 		public String toDay = new SimpleDateFormat("yyyy-MM-dd").format(new Date()); // 날짜가 변경되지 않는이상 계속 고정됨.
 		@Override
 		public boolean workStepComplete(String targetUrl, String method, Map<String, Object> params, String startStr, String endStr, String searchedResult, StringBuffer body) {
-			
+
 			String nowDay = new SimpleDateFormat("yyyy-MM-dd").format(new Date()); // 호출시마다 날짜를 새로 가져옴.
 			int resultCount = 0;
 			int start = 0;
@@ -424,18 +433,18 @@ public class StockAlramJPanel extends JPanel {
 					break;
 				}
 			}
-			
+
 			StringBuffer log = new StringBuffer(String.format("> 감시[%d] Try[%d] : ", jPaneId, ++chkCount));
 			log.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()))
 					.append(" : [" + params.get("sc_word") + "] " + searchedResult)
 					.append(" ====> " + resultCount);
-			
+
 			for (int i = 0; i < 100; i++) {
 				System.out.printf("\b"); // System.out.print("\b");
 			}
 			System.out.print(log.toString());
 			System.out.println("          ");
-			
+
 			if(resultCount > beforeCount) {
 				// 실행 IE to Page...
 				try {
